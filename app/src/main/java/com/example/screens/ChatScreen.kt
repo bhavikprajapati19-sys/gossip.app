@@ -68,6 +68,24 @@ fun ChatScreen(
     var messageText by remember { mutableStateOf("") }
     val messages = remember { mutableStateListOf(*mockMessages.toTypedArray()) }
     var showAttachmentMenu by remember { mutableStateOf(false) }
+    var isOtherPartyTyping by remember { mutableStateOf(false) }
+    
+    // Simulate the other party typing after a message is sent
+    LaunchedEffect(messages.size) {
+        if (messages.lastOrNull()?.isMine == true) {
+            isOtherPartyTyping = true
+            kotlinx.coroutines.delay(3000)
+            isOtherPartyTyping = false
+            messages.add(
+                Message(
+                    id = UUID.randomUUID().toString(),
+                    text = "Sounds good! 👍",
+                    isMine = false,
+                    time = "Just now"
+                )
+            )
+        }
+    }
     
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
@@ -121,7 +139,17 @@ fun ChatScreen(
                             Icon(Icons.Default.Person, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer)
                         }
                         Spacer(modifier = Modifier.width(12.dp))
-                        Text(chatName, fontWeight = FontWeight.Bold)
+                        Column {
+                            Text(chatName, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            if (isOtherPartyTyping) {
+                                Text(
+                                    text = "typing...",
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
                     }
                 },
                 navigationIcon = {
@@ -233,9 +261,10 @@ fun ChatScreen(
                 .padding(horizontal = 16.dp),
             reverseLayout = true
         ) {
-            // Mock typing indicator (only show occasionally or for demo)
-            item {
-                TypingIndicator()
+            if (isOtherPartyTyping) {
+                item {
+                    TypingIndicator()
+                }
             }
             
             items(messages.reversed(), key = { it.id }) { message ->
