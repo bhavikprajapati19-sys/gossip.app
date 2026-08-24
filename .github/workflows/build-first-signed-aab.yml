@@ -1,0 +1,70 @@
+name: Build First Signed AAB
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build signed release AAB
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Grant Gradle execute permission
+        run: chmod +x ./gradlew
+
+      - name: Decode signing keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.keystore"
+
+      - name: Build signed release AAB
+        env:
+          KEYSTORE_PATH: ${{ runner.temp }}/release.keystore
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          ./gradlew bundleRelease \
+            -Pandroid.injected.signing.store.file="$KEYSTORE_PATH" \
+            -Pandroid.injected.signing.store.password="$KEYSTORE_PASSWORD" \
+            -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$KEY_PASSWORD"
+
+      - name: Find generated AAB
+        id: aab
+        run: |
+          AAB=$(find . -type f -path "*/build/outputs/bundle/release/*.aab" | head -n 1)
+
+          if [ -z "$AAB" ]; then
+            echo "No release AAB was found."
+            exit 1
+          fi
+
+          echo "AAB_PATH=$AAB" >> "$GITHUB_OUTPUT"
+          echo "Generated: $AAB"
+
+      - name: Upload signed AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: signed-release-aab
+          path: ${{ steps.aab.outputs.AAB_PATH }}
+          if-no-files-found: error
+
+      - name: Verify AAB exists
+        run: |
+          test -f "${{ steps.aab.outputs.AAB_PATH }}"
+          echo "Signed AAB successfully generated."
