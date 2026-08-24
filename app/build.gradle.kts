@@ -11,12 +11,12 @@ plugins {
 
 android {
   namespace = "com.example"
-  compileSdk { version = release(36) { minorApiLevel = 1 } }
+  compileSdk = 35
 
   defaultConfig {
     applicationId = "com.aistudio.gossip.xjkwpl"
     minSdk = 24
-    targetSdk = 36
+    targetSdk = 35
     versionCode = 3
     versionName = "3.0"
 
@@ -25,11 +25,22 @@ android {
 
   signingConfigs {
     create("release") {
-      val keystorePath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/my-upload-key.jks"
-      storeFile = file(keystorePath)
-      storePassword = System.getenv("STORE_PASSWORD") ?: "android"
-      keyAlias = "upload"
-      keyPassword = System.getenv("KEY_PASSWORD") ?: "android"
+      val keystoreFilePath = providers.environmentVariable("KEYSTORE_PATH")
+        .orElse(providers.gradleProperty("RELEASE_KEYSTORE_PATH"))
+        .orElse("${rootDir}/release.keystore").get()
+      val keystoreFile = file(keystoreFilePath)
+      if (keystoreFile.exists()) {
+        storeFile = keystoreFile
+        storePassword = providers.environmentVariable("STORE_PASSWORD")
+          .orElse(providers.gradleProperty("RELEASE_STORE_PASSWORD"))
+          .orElse("android").get()
+        keyAlias = providers.environmentVariable("KEY_ALIAS")
+          .orElse(providers.gradleProperty("RELEASE_KEY_ALIAS"))
+          .orElse("releaseKey").get()
+        keyPassword = providers.environmentVariable("KEY_PASSWORD")
+          .orElse(providers.gradleProperty("RELEASE_KEY_PASSWORD"))
+          .orElse("android").get()
+      }
     }
     create("debugConfig") {
       storeFile = file("${rootDir}/debug.keystore")
@@ -41,8 +52,9 @@ android {
 
   buildTypes {
     release {
-      isCrunchPngs = false
-      isMinifyEnabled = false
+      isCrunchPngs = true
+      isMinifyEnabled = true
+      isShrinkResources = true
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
       signingConfig = signingConfigs.getByName("release")
     }
