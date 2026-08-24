@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.GroupAdd
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -48,10 +49,13 @@ data class ChatSummary(
     val hasUnreadIndicator: Boolean = false,
     val backgroundColor: Color = Color.Transparent,
     val opacity: Float = 1f,
-    val mobileNumber: String = ""
+    val mobileNumber: String = "",
+    val isStarred: Boolean = false
 )
 
-val mockChats = listOf(
+val blockedUserIds = androidx.compose.runtime.mutableStateListOf<String>()
+
+val mockChats = androidx.compose.runtime.mutableStateListOf(
     ChatSummary(
         id = "1", 
         name = "Sarah Miller", 
@@ -62,7 +66,8 @@ val mockChats = listOf(
         avatarUrl = "https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah",
         hasUnreadIndicator = true,
         backgroundColor = Color(0xFF3B0764).copy(alpha = 0.6f),
-        mobileNumber = "+1234567890"
+        mobileNumber = "+1234567890",
+        isStarred = true
     ),
     ChatSummary(
         id = "2", 
@@ -101,9 +106,11 @@ fun ChatListScreen(
     onNavigateToChat: (String) -> Unit,
     onNavigateToProfile: () -> Unit,
     onNavigateToAddFriend: () -> Unit,
-    onNavigateToFriends: () -> Unit
+    onNavigateToFriends: () -> Unit,
+    onNavigateToCreateGroup: () -> Unit
 ) {
-    var selectedTab by androidx.compose.runtime.remember { androidx.compose.runtime.mutableIntStateOf(0) }
+    var selectedBottomTab by androidx.compose.runtime.remember { androidx.compose.runtime.mutableIntStateOf(0) }
+    var chatFilter by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("All") }
     var searchQuery by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("") }
     var isSearchActive by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
 
@@ -171,70 +178,56 @@ fun ChatListScreen(
                                 letterSpacing = (-0.5).sp
                             )
                             Text(
-                                text = if (selectedTab == 0) "3 unread conversations" else "Share your moments",
+                                text = if (selectedBottomTab == 0) "3 unread conversations" else "Share your moments",
                                 fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                             IconButton(onClick = { isSearchActive = true }) {
                                 Text("🔍", fontSize = 24.sp)
                             }
-                            Box(
-                                modifier = Modifier
-                                    .size(44.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.primary)
-                                    .clickable(onClick = onNavigateToProfile),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    "JD",
-                                    color = MaterialTheme.colorScheme.onPrimary,
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontSize = 14.sp
-                                )
+                            IconButton(onClick = onNavigateToCreateGroup) {
+                                Icon(Icons.Default.GroupAdd, contentDescription = "Create Group")
                             }
                         }
                     }
                 }
-                
+                   
                 Spacer(modifier = Modifier.height(16.dp))
-                
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    NavPill(
-                        text = "Messages", 
-                        isSelected = selectedTab == 0, 
-                        onClick = { selectedTab = 0 },
-                        modifier = Modifier.weight(1f)
-                    )
-                    NavPill(
-                        text = "Status", 
-                        isSelected = selectedTab == 1, 
-                        onClick = { selectedTab = 1 },
-                        modifier = Modifier.weight(1f)
-                    )
-                    NavPill(
-                        text = "Groups", 
-                        isSelected = selectedTab == 2, 
-                        onClick = { selectedTab = 2 },
-                        modifier = Modifier.weight(1f)
-                    )
+                   
+                if (selectedBottomTab == 0) {
+                    androidx.compose.foundation.lazy.LazyRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        val filters = listOf("All", "Unread", "Favourites", "Groups")
+                        items(filters.size) { index ->
+                            val filter = filters[index]
+                            NavPill(
+                                text = filter, 
+                                isSelected = chatFilter == filter, 
+                                onClick = { chatFilter = filter }
+                            )
+                        }
+                    }
                 }
             }
         },
         bottomBar = {
-            BottomNavBar()
+            BottomNavBar(
+                selectedBottomTab = selectedBottomTab,
+                onTabSelected = { selectedBottomTab = it },
+                onNavigateToFriends = onNavigateToFriends,
+                onNavigateToProfile = onNavigateToProfile
+            )
         },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { 
-                    if (selectedTab == 0) {
+                    if (selectedBottomTab == 0) {
                         onNavigateToAddFriend()
-                    } else if (selectedTab == 2) {
+                    } else if (selectedBottomTab == 2) {
                         // In a real app this would go to a create group screen
                         onNavigateToAddFriend()
                     }
@@ -244,7 +237,7 @@ fun ChatListScreen(
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.padding(bottom = 16.dp)
             ) {
-                Text(if (selectedTab == 1) "📷" else if (selectedTab == 2) "👥" else "✍️", fontSize = 24.sp)
+                Text(if (selectedBottomTab == 1) "📷" else if (selectedBottomTab == 2) "👥" else "✍️", fontSize = 24.sp)
             }
         }
     ) { paddingValues ->
@@ -253,18 +246,43 @@ fun ChatListScreen(
             .padding(paddingValues)
             .padding(horizontal = 16.dp)
         ) {
-            when (selectedTab) {
+            when (selectedBottomTab) {
                 0 -> {
                     val filteredChats = mockChats.filter {
-                        it.name.contains(searchQuery, ignoreCase = true) || 
-                        it.mobileNumber.contains(searchQuery, ignoreCase = true)
+                        val baseFilter = !blockedUserIds.contains(it.id) && (
+                            it.name.contains(searchQuery, ignoreCase = true) || 
+                            it.mobileNumber.contains(searchQuery, ignoreCase = true)
+                        )
+                        val toggleFilter = when (chatFilter) {
+                            "Unread" -> it.unreadCount > 0
+                            "Favourites" -> it.isStarred
+                            "Groups" -> false // Filtering logic handled below or here if groups were in mockChats
+                            else -> true
+                        }
+                        baseFilter && toggleFilter
                     }
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        items(filteredChats) { chat ->
-                            ChatItem(chat = chat, onClick = { onNavigateToChat(chat.id) })
+                    if (chatFilter == "Groups") {
+                        val mockGroups = listOf(
+                            ChatSummary("g1", "Family Group", "Hello everyone!", "Someone", "10:00 AM", 5, false, false, "https://api.dicebear.com/7.x/avataaars/svg?seed=Family"),
+                            ChatSummary("g2", "Weekend Trip", "Are we still on?", "Alice", "Yesterday", 2, false, false, "https://api.dicebear.com/7.x/avataaars/svg?seed=Trip"),
+                            ChatSummary("g3", "Project Team", "I'll review the PR.", "You", "Mon", 0, false, false, "https://api.dicebear.com/7.x/avataaars/svg?seed=Team")
+                        )
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            items(mockGroups) { group ->
+                                ChatItem(chat = group, onClick = { onNavigateToChat(group.id) })
+                            }
+                        }
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            items(filteredChats) { chat ->
+                                ChatItem(chat = chat, onClick = { onNavigateToChat(chat.id) })
+                            }
                         }
                     }
                 }
@@ -429,35 +447,48 @@ fun ChatItem(chat: ChatSummary, onClick: () -> Unit) {
 }
 
 @Composable
-fun BottomNavBar() {
+fun BottomNavBar(
+    selectedBottomTab: Int,
+    onTabSelected: (Int) -> Unit,
+    onNavigateToFriends: () -> Unit,
+    onNavigateToProfile: () -> Unit
+) {
     Column {
         HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(BottomBarBackground)
-                .padding(horizontal = 32.dp, vertical = 12.dp)
+                .padding(horizontal = 16.dp, vertical = 12.dp)
                 .windowInsetsPadding(WindowInsets.navigationBars),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            BottomNavItem("Chats", "💬", true)
-            BottomNavItem("Starred", "⭐", false)
-            BottomNavItem("Friends", "👥", false)
+            BottomNavItem("Chats", "💬", selectedBottomTab == 0, { onTabSelected(0) }, Modifier.weight(1f))
+            BottomNavItem("Status", "📸", selectedBottomTab == 1, { onTabSelected(1) }, Modifier.weight(1f))
+            BottomNavItem("Groups", "🏘️", selectedBottomTab == 2, { onTabSelected(2) }, Modifier.weight(1f))
+            BottomNavItem("Friends", "👥", selectedBottomTab == 3, { 
+                onTabSelected(3)
+                onNavigateToFriends() 
+            }, Modifier.weight(1f))
+            BottomNavItem("Profile", "👤", selectedBottomTab == 4, {
+                onTabSelected(4)
+                onNavigateToProfile()
+            }, Modifier.weight(1f))
         }
     }
 }
 
 @Composable
-fun BottomNavItem(label: String, icon: String, isSelected: Boolean) {
+fun BottomNavItem(label: String, icon: String, isSelected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp),
-        modifier = Modifier.clickable { /* Select tab */ }
+        modifier = modifier.clickable(onClick = onClick)
     ) {
         Box(
             modifier = Modifier
-                .width(64.dp)
+                .width(48.dp)
                 .height(32.dp)
                 .clip(CircleShape)
                 .background(if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent),

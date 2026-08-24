@@ -1,6 +1,7 @@
 package com.example.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -90,53 +91,78 @@ fun CallScreen(
             }
             
             // Call Controls
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 32.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                // Mute Toggle
-                IconButton(
-                    onClick = { isMuted = !isMuted },
-                    modifier = Modifier
-                        .size(64.dp)
-                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), CircleShape)
-                ) {
-                    Icon(
-                        imageVector = if (isMuted) Icons.Default.MicOff else Icons.Default.Mic,
-                        contentDescription = "Mute",
-                        tint = if (isVideoEnabled) Color.White else MaterialTheme.colorScheme.onSurface
-                    )
-                }
-                
-                // Video Toggle
-                IconButton(
-                    onClick = { isVideoEnabled = !isVideoEnabled },
-                    modifier = Modifier
-                        .size(64.dp)
-                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), CircleShape)
-                ) {
-                    Icon(
-                        imageVector = if (isVideoEnabled) Icons.Default.Videocam else Icons.Default.VideocamOff,
-                        contentDescription = "Video",
-                        tint = if (isVideoEnabled) Color.White else MaterialTheme.colorScheme.onSurface
-                    )
+                if (isVideoEnabled) {
+                    // Emojis and Filters
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 16.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        listOf("✨", "🐶", "🕶️", "❤️", "👍").forEach { emoji ->
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .background(Color.White.copy(alpha = 0.2f), CircleShape)
+                                    .clickable { /* Apply filter or send emoji */ },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(emoji, fontSize = 24.sp)
+                            }
+                        }
+                    }
                 }
 
-                // End Call
-                IconButton(
-                    onClick = onEndCall,
+                Row(
                     modifier = Modifier
-                        .size(64.dp)
-                        .background(Color.Red, CircleShape)
+                        .fillMaxWidth()
+                        .padding(horizontal = 32.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.CallEnd,
-                        contentDescription = "End Call",
-                        tint = Color.White
-                    )
+                    // Mute Toggle
+                    IconButton(
+                        onClick = { isMuted = !isMuted },
+                        modifier = Modifier
+                            .size(64.dp)
+                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), CircleShape)
+                    ) {
+                        Icon(
+                            imageVector = if (isMuted) Icons.Default.MicOff else Icons.Default.Mic,
+                            contentDescription = "Mute",
+                            tint = if (isVideoEnabled) Color.White else MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    
+                    // Video Toggle
+                    IconButton(
+                        onClick = { isVideoEnabled = !isVideoEnabled },
+                        modifier = Modifier
+                            .size(64.dp)
+                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), CircleShape)
+                    ) {
+                        Icon(
+                            imageVector = if (isVideoEnabled) Icons.Default.Videocam else Icons.Default.VideocamOff,
+                            contentDescription = "Video",
+                            tint = if (isVideoEnabled) Color.White else MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+    
+                    // End Call
+                    IconButton(
+                        onClick = onEndCall,
+                        modifier = Modifier
+                            .size(64.dp)
+                            .background(Color.Red, CircleShape)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CallEnd,
+                            contentDescription = "End Call",
+                            tint = Color.White
+                        )
+                    }
                 }
             }
         }

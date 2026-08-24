@@ -7,6 +7,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 
 data class Country(val code: String, val dialCode: String, val name: String, val flag: String)
@@ -22,31 +24,8 @@ val ALL_COUNTRIES = listOf(
     Country("JP", "+81", "Japan", "🇯🇵"),
     Country("BR", "+55", "Brazil", "🇧🇷"),
     Country("ZA", "+27", "South Africa", "🇿🇦"),
-    Country("MX", "+52", "Mexico", "🇲🇽"),
-    Country("IT", "+39", "Italy", "🇮🇹"),
-    Country("ES", "+34", "Spain", "🇪🇸"),
-    Country("RU", "+7", "Russia", "🇷🇺"),
-    Country("CN", "+86", "China", "🇨🇳"),
-    Country("AE", "+971", "United Arab Emirates", "🇦🇪"),
-    Country("AR", "+54", "Argentina", "🇦🇷"),
-    Country("BD", "+880", "Bangladesh", "🇧🇩"),
-    Country("CO", "+57", "Colombia", "🇨🇴"),
-    Country("EG", "+20", "Egypt", "🇪🇬"),
-    Country("ID", "+62", "Indonesia", "🇮🇩"),
-    Country("IR", "+98", "Iran", "🇮🇷"),
-    Country("IQ", "+964", "Iraq", "🇮🇶"),
-    Country("KE", "+254", "Kenya", "🇰🇪"),
-    Country("KR", "+82", "South Korea", "🇰🇷"),
-    Country("MY", "+60", "Malaysia", "🇲🇾"),
-    Country("NG", "+234", "Nigeria", "🇳🇬"),
-    Country("PH", "+63", "Philippines", "🇵🇭"),
-    Country("PK", "+92", "Pakistan", "🇵🇰"),
-    Country("SA", "+966", "Saudi Arabia", "🇸🇦"),
-    Country("TH", "+66", "Thailand", "🇹🇭"),
-    Country("TR", "+90", "Turkey", "🇹🇷"),
-    Country("VN", "+84", "Vietnam", "🇻🇳")
-    // Note: Kept to a solid top 30 list to cover major demographics.
-).sortedBy { it.name }
+    Country("MX", "+52", "Mexico", "🇲🇽")
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,34 +39,52 @@ fun CountryPickerBottomSheet(
     }
 
     ModalBottomSheet(
-        onDismissRequest = onDismissRequest
+        onDismissRequest = onDismissRequest,
+        containerColor = RoyalNavy,
+        contentColor = Color.White
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .fillMaxHeight(0.9f)
         ) {
+            Text(
+                text = "Select Kingdom",
+                style = MaterialTheme.typography.titleLarge,
+                color = RoyalGold,
+                fontFamily = FontFamily.Serif,
+                modifier = Modifier.padding(16.dp)
+            )
+
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
-                placeholder = { Text("Search country or code...") },
-                singleLine = true
+                placeholder = { Text("Search kingdom or scroll...", color = Color.LightGray) },
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    unfocusedBorderColor = RoyalGold.copy(alpha = 0.5f),
+                    focusedBorderColor = RoyalGold,
+                    unfocusedTextColor = Color.White,
+                    focusedTextColor = Color.White,
+                    cursorColor = RoyalGold
+                )
             )
-            
+
             LazyColumn {
                 items(filteredCountries) { country ->
-                    ListItem(
-                        headlineContent = { Text(country.name) },
-                        leadingContent = { Text(country.flag) },
-                        trailingContent = { Text(country.dialCode) },
-                        modifier = Modifier.clickable {
-                            onCountrySelected(country)
-                        }
-                    )
-                    HorizontalDivider()
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onCountrySelected(country) }
+                            .padding(vertical = 12.dp, horizontal = 16.dp)
+                    ) {
+                        Text(text = country.flag, modifier = Modifier.padding(end = 16.dp))
+                        Text(text = country.name, modifier = Modifier.weight(1f), color = Color.White)
+                        Text(text = country.dialCode, color = RoyalGold)
+                    }
                 }
             }
         }

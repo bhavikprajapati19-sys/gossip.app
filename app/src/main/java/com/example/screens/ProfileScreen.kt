@@ -34,7 +34,7 @@ import coil.compose.AsyncImage
 fun ProfileScreen(onNavigateBack: () -> Unit, onLogout: () -> Unit, onNavigateToSettings: () -> Unit) {
     var profileImageUri by remember { mutableStateOf<Uri?>(null) }
     var name by remember { mutableStateOf("My Name") }
-    var bio by remember { mutableStateOf("Coffee enthusiast & designer") }
+        var bio by remember { mutableStateOf("Coffee enthusiast & designer") }
     var birthDate by remember { mutableStateOf("October 24, 1995") }
     var location by remember { mutableStateOf("San Francisco, CA") }
     var isLiveLocationShared by remember { mutableStateOf(false) }
@@ -45,6 +45,33 @@ fun ProfileScreen(onNavigateBack: () -> Unit, onLogout: () -> Unit, onNavigateTo
     ) { uri ->
         if (uri != null) {
             profileImageUri = uri
+        }
+    }
+
+    var showDatePicker by remember { mutableStateOf(false) }
+    val datePickerState = rememberDatePickerState()
+
+    if (showDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDatePicker = false
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        val format = java.text.SimpleDateFormat("MMMM dd, yyyy", java.util.Locale.getDefault())
+                        birthDate = format.format(java.util.Date(millis))
+                    }
+                }) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("Cancel")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
         }
     }
 
@@ -144,7 +171,7 @@ fun ProfileScreen(onNavigateBack: () -> Unit, onLogout: () -> Unit, onNavigateTo
             OutlinedTextField(
                 value = bio,
                 onValueChange = { bio = it },
-                label = { Text("Bio") },
+                label = { Text("Status Message") },
                 modifier = Modifier.fillMaxWidth(),
                 leadingIcon = { Icon(Icons.Default.Info, contentDescription = null) },
                 shape = MaterialTheme.shapes.medium
@@ -154,9 +181,17 @@ fun ProfileScreen(onNavigateBack: () -> Unit, onLogout: () -> Unit, onNavigateTo
             
             OutlinedTextField(
                 value = birthDate,
-                onValueChange = { birthDate = it },
+                onValueChange = { },
+                readOnly = true,
                 label = { Text("Birth Date") },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().clickable { showDatePicker = true },
+                enabled = false,
+                colors = OutlinedTextFieldDefaults.colors(
+                    disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                    disabledBorderColor = MaterialTheme.colorScheme.outline,
+                    disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                ),
                 leadingIcon = { Icon(Icons.Default.CalendarToday, contentDescription = null) },
                 shape = MaterialTheme.shapes.medium
             )

@@ -1,4 +1,8 @@
-package com.example.screens
+lines = open('app/src/main/java/com/example/screens/ChatScreen.kt').read()
+
+# Let's completely rewrite the file with the correct contents
+with open('app/src/main/java/com/example/screens/ChatScreen.kt', 'w') as f:
+    f.write('''package com.example.screens
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -64,8 +68,7 @@ val mockMessages = listOf(
 fun ChatScreen(
     chatId: String, 
     onNavigateBack: () -> Unit,
-    onNavigateToCall: (Boolean) -> Unit,
-    onNavigateToFriendProfile: () -> Unit = {}
+    onNavigateToCall: (Boolean) -> Unit
 ) {
     var messageText by remember { mutableStateOf("") }
     val messages = remember { mutableStateListOf(*mockMessages.toTypedArray()) }
@@ -164,15 +167,13 @@ fun ChatScreen(
     }
     
     val historicBackgrounds = listOf(
-        com.example.R.drawable.img_royal_bg_1787146791490,
-        com.example.R.drawable.img_modern_3d_bg_1787146333038
+        com.example.R.drawable.img_historic_india_1_1787147522050,
+        com.example.R.drawable.img_historic_india_2_1787147543595,
+        com.example.R.drawable.img_historic_india_3_1787147566220
     )
     val randomBackground = remember { historicBackgrounds.random() }
 
-    val chat = mockChats.find { it.id == chatId }
-    val chatName = chat?.name ?: "Unknown"
-    val isOnline = chat?.isOnline ?: false
-    val lastSeenTime = chat?.time ?: "12:00 PM"
+    val chatName = mockChats.find { it.id == chatId }?.name ?: "Unknown"
     var showOptionsMenu by remember { mutableStateOf(false) }
     val isBlocked = blockedUserIds.contains(chatId)
 
@@ -198,16 +199,10 @@ fun ChatScreen(
                                 modifier = Modifier
                                     .size(36.dp)
                                     .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.primaryContainer)
-                                    .clickable { onNavigateToFriendProfile() },
+                                    .background(MaterialTheme.colorScheme.primaryContainer),
                                 contentAlignment = Alignment.Center
                             ) {
-                                AsyncImage(
-                                    model = chat?.avatarUrl,
-                                    contentDescription = "Profile Picture",
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.Crop
-                                )
+                                Icon(Icons.Default.Person, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer)
                             }
                             Spacer(modifier = Modifier.width(12.dp))
                             Column {
@@ -218,12 +213,6 @@ fun ChatScreen(
                                         color = MaterialTheme.colorScheme.primary,
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Medium
-                                    )
-                                } else {
-                                    Text(
-                                        text = if (isOnline) "Online" else "last seen ${if (lastSeenTime.contains(":")) "today at $lastSeenTime" else lastSeenTime}",
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        fontSize = 12.sp
                                     )
                                 }
                             }
@@ -258,13 +247,6 @@ fun ChatScreen(
                                         } else {
                                             blockedUserIds.add(chatId)
                                         }
-                                    }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("Clear Chat", color = MaterialTheme.colorScheme.error) },
-                                    onClick = {
-                                        showOptionsMenu = false
-                                        messages.clear()
                                     }
                                 )
                             }
@@ -652,3 +634,4 @@ fun TypingIndicator() {
         }
     }
 }
+''')

@@ -45,6 +45,7 @@ data class StatusViewer(
 
 data class StatusUpdate(
     val id: String,
+    val authorId: String = "",
     val authorName: String,
     val timeAgo: String,
     val avatarUrl: String? = null,
@@ -59,6 +60,7 @@ data class StatusUpdate(
 val initialMockStatuses = listOf(
     StatusUpdate(
         id = "s1",
+        authorId = "1",
         authorName = "Sarah Miller",
         timeAgo = "10 minutes ago",
         avatarUrl = "https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah",
@@ -199,7 +201,7 @@ fun StatusViewsDialog(myStatuses: List<StatusUpdate>, onDismiss: () -> Unit) {
 fun StatusTab() {
     val context = LocalContext.current
     var myStatuses by remember { mutableStateOf(listOf<StatusUpdate>()) }
-    val mockStatuses by remember { mutableStateOf(initialMockStatuses) }
+    val mockStatuses = initialMockStatuses.filter { !blockedUserIds.contains(it.authorId) }
     var viewingStatus by remember { mutableStateOf<StatusUpdate?>(null) }
     var viewingMyStatusViews by remember { mutableStateOf(false) }
     var pendingStatusUri by remember { mutableStateOf<Uri?>(null) }
@@ -209,6 +211,22 @@ fun StatusTab() {
     ) { uri ->
         if (uri != null) {
             pendingStatusUri = uri
+        }
+    }
+
+    var isCreatingTextStatus by remember { mutableStateOf(false) }
+    var textStatusContent by remember { mutableStateOf("") }
+    
+    // Simple state to show recording
+    var isRecordingVoice by remember { mutableStateOf(false) }
+
+    val audioPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            isRecordingVoice = true
+        } else {
+            Toast.makeText(context, "Microphone permission required for voice status", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -237,7 +255,6 @@ fun StatusTab() {
                         icon = Icons.Default.CameraAlt,
                         label = "Photo & Music",
                         onClick = { 
-                            Toast.makeText(context, "Opening Camera with Music & Layout options...", Toast.LENGTH_SHORT).show()
                             mediaPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo))
                         }
                     )
@@ -245,13 +262,15 @@ fun StatusTab() {
                     StatusActionButton(
                         icon = Icons.Default.Edit,
                         label = "Text",
-                        onClick = { Toast.makeText(context, "Opening Text Status Editor...", Toast.LENGTH_SHORT).show() }
+                        onClick = { isCreatingTextStatus = true }
                     )
                     
                     StatusActionButton(
                         icon = Icons.Default.Mic,
                         label = "Voice",
-                        onClick = { Toast.makeText(context, "Hold to Record Voice Status...", Toast.LENGTH_SHORT).show() }
+                        onClick = { 
+                            audioPermissionLauncher.launch(android.Manifest.permission.RECORD_AUDIO)
+                        }
                     )
                 }
             }
@@ -356,6 +375,79 @@ fun StatusTab() {
                             pendingStatusUri = null
                         }) {
                             Text("Post")
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (isCreatingTextStatus) {
+        Dialog(onDismissRequest = { isCreatingTextStatus = false }) {
+            Surface(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth().height(300.dp)) {
+                Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+                    Text("Text Status", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    OutlinedTextField(
+                        value = textStatusContent,
+                        onValueChange = { textStatusContent = it },
+                        modifier = Modifier.fillMaxWidth().weight(1f),
+                        placeholder = { Text("Type a status...") },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            unfocusedBorderColor = Color.Transparent,
+                            focusedBorderColor = Color.Transparent
+                        )
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                        TextButton(onClick = { isCreatingTextStatus = false; textStatusContent = "" }) { Text("Cancel") }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Button(onClick = {
+                            if (textStatusContent.isNotBlank()) {
+                                val newStatus = StatusUpdate(
+                                    id = UUID.randomUUID().toString(),
+                                    authorName = "My Status",
+                                    timeAgo = "Just now",
+                                    isMine = true,
+                                    views = mockViewers,
+                                    caption = textStatusContent
+                                )
+                                myStatuses = listOf(newStatus) + myStatuses
+                                isCreatingTextStatus = false
+                                textStatusContent = ""
+                            }
+                        }) {
+                            Text("Post")
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (isRecordingVoice) {
+        Dialog(onDismissRequest = { isRecordingVoice = false }) {
+            Surface(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(Icons.Default.Mic, contentDescription = null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.error)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text("Recording...", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                        TextButton(onClick = { isRecordingVoice = false }) { Text("Cancel") }
+                        Button(onClick = {
+                            val newStatus = StatusUpdate(
+                                id = UUID.randomUUID().toString(),
+                                authorName = "My Status",
+                                timeAgo = "Just now",
+                                isMine = true,
+                                views = mockViewers,
+                                caption = "🎙️ Voice Status (0:05)"
+                            )
+                            myStatuses = listOf(newStatus) + myStatuses
+                            isRecordingVoice = false
+                        }) {
+                            Text("Post Voice")
                         }
                     }
                 }

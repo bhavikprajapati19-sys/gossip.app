@@ -2,6 +2,8 @@ package com.example.screens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -10,86 +12,114 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Phone
-import androidx.compose.foundation.clickable
+import com.example.R
+
+// Royal Colors
+val RoyalGold = Color(0xFFD4AF37)
+val RoyalPurple = Color(0xFF2C043D)
+val RoyalNavy = Color(0xFF0F172A)
+val RoyalSurface = Color(0x99000000)
 
 @Composable
 fun AuthScreen(onSendOtp: (String) -> Unit) {
     var countryCode by remember { mutableStateOf("+1") }
     var showCountryPicker by remember { mutableStateOf(false) }
     var phoneNumber by remember { mutableStateOf("") }
+    var acceptedTerms by remember { mutableStateOf(false) }
+    var showTermsDialog by remember { mutableStateOf(false) }
 
     val isPhoneValid = phoneNumber.length >= 10
 
-    val neonPurpleGlow = Brush.radialGradient(
-        colors = listOf(Color(0xFFC084FC).copy(alpha = 0.35f), Color.Transparent),
-        center = Offset(0f, 0f),
-        radius = 1200f
-    )
-    val neonCyanGlow = Brush.radialGradient(
-        colors = listOf(Color(0xFF22D3EE).copy(alpha = 0.25f), Color.Transparent),
-        center = Offset(1000f, 2000f),
-        radius = 1500f
-    )
-
     Scaffold(
-        containerColor = Color(0xFF09090B)
+        containerColor = Color.Transparent
     ) { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
         ) {
-            // Gradient Orbs Background
-            Box(modifier = Modifier.fillMaxSize().background(neonPurpleGlow))
-            Box(modifier = Modifier.fillMaxSize().background(neonCyanGlow))
+            // Royal Background Image
+            Image(
+                painter = painterResource(id = R.drawable.img_royal_bg_1787146791490),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+
+            // Semi-transparent overlay to ensure text readability
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Brush.verticalGradient(
+                        colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f))
+                    ))
+            )
 
             Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    .padding(paddingValues)
                     .padding(32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                Image(
-                    painter = androidx.compose.ui.res.painterResource(id = com.example.R.drawable.ic_gossip_logo),
-                    contentDescription = "Gossip Logo",
+                // Royal Logo Placeholder
+                Box(
                     modifier = Modifier
                         .size(120.dp)
                         .padding(bottom = 16.dp)
                         .clip(RoundedCornerShape(32.dp))
-                )
+                        .border(2.dp, RoyalGold, RoundedCornerShape(32.dp))
+                        .background(RoyalSurface),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "♔",
+                        fontSize = 64.sp,
+                        color = RoyalGold
+                    )
+                }
                 
                 Text(
-                    text = "Gossip",
+                    text = "GOSSIP",
                     style = MaterialTheme.typography.displayLarge,
-                    fontWeight = FontWeight.Black,
-                    color = MaterialTheme.colorScheme.primary,
-                    letterSpacing = (-2).sp,
-                    modifier = Modifier.padding(bottom = 16.dp)
+                    fontWeight = FontWeight.Bold,
+                    color = RoyalGold,
+                    letterSpacing = 4.sp,
+                    fontFamily = FontFamily.Serif,
+                    modifier = Modifier.padding(bottom = 8.dp)
                 )
                 
                 Text(
-                    text = "Enter your phone number to start.",
+                    text = "Exclusive Conversations.",
                     style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = Color.White.copy(alpha = 0.8f),
+                    fontFamily = FontFamily.Serif,
+                    letterSpacing = 1.sp,
                     modifier = Modifier.padding(bottom = 48.dp)
                 )
                 
                 val textFieldColors = OutlinedTextFieldDefaults.colors(
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
-                    focusedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)
+                    unfocusedBorderColor = RoyalGold.copy(alpha = 0.5f),
+                    focusedBorderColor = RoyalGold,
+                    unfocusedContainerColor = RoyalSurface,
+                    focusedContainerColor = RoyalSurface.copy(alpha = 0.8f),
+                    unfocusedTextColor = Color.White,
+                    focusedTextColor = Color.White,
+                    focusedLabelColor = RoyalGold,
+                    cursorColor = RoyalGold
                 )
 
                 Row(
@@ -100,60 +130,90 @@ fun AuthScreen(onSendOtp: (String) -> Unit) {
                         value = countryCode,
                         onValueChange = {},
                         readOnly = true,
-                        modifier = Modifier.weight(0.3f).clickable { showCountryPicker = true },
+                        modifier = Modifier
+                            .weight(0.3f)
+                            .clickable { showCountryPicker = true },
                         enabled = false,
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                        shape = RoundedCornerShape(16.dp),
+                        shape = RoundedCornerShape(8.dp),
                         colors = textFieldColors.copy(
-                            disabledContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
-                            disabledTextColor = MaterialTheme.colorScheme.onSurface,
-                            disabledIndicatorColor = MaterialTheme.colorScheme.outline
+                            disabledContainerColor = RoyalSurface,
+                            disabledTextColor = Color.White,
+                            disabledIndicatorColor = RoyalGold.copy(alpha = 0.5f)
                         ),
-                        textStyle = LocalTextStyle.current.copy(textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                        textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center, color = Color.White)
                     )
                     
                     OutlinedTextField(
                         value = phoneNumber,
                         onValueChange = { phoneNumber = it.filter { char -> char.isDigit() } },
-                        label = { Text("Phone Number") },
+                        label = { Text("Phone Number", color = Color.LightGray) },
                         modifier = Modifier.weight(0.7f),
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                        leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null) },
-                        shape = RoundedCornerShape(16.dp),
+                        leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null, tint = RoyalGold) },
+                        shape = RoundedCornerShape(8.dp),
                         colors = textFieldColors
                     )
                 }
                 
-                Spacer(modifier = Modifier.height(48.dp))
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = acceptedTerms,
+                        onCheckedChange = { acceptedTerms = it },
+                        colors = CheckboxDefaults.colors(
+                            checkedColor = RoyalGold,
+                            checkmarkColor = Color.Black,
+                            uncheckedColor = RoyalGold.copy(alpha = 0.5f)
+                        )
+                    )
+                    Text(
+                        text = "I agree to the ",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.LightGray
+                    )
+                    Text(
+                        text = "Royal Decrees",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = RoyalGold,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.clickable { showTermsDialog = true }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
                 
                 Button(
                     onClick = { onSendOtp("$countryCode$phoneNumber") },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp),
-                    shape = RoundedCornerShape(28.dp),
-                    enabled = isPhoneValid,
+                        .height(56.dp)
+                        .border(1.dp, if (isPhoneValid && acceptedTerms) RoyalGold else RoyalGold.copy(alpha=0.3f), RoundedCornerShape(8.dp)),
+                    shape = RoundedCornerShape(8.dp),
+                    enabled = isPhoneValid && acceptedTerms,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
+                        containerColor = RoyalGold.copy(alpha = 0.15f),
+                        contentColor = RoyalGold,
+                        disabledContainerColor = Color.Transparent,
+                        disabledContentColor = RoyalGold.copy(alpha = 0.3f)
                     )
                 ) {
                     Text(
-                        text = "Send Code",
+                        text = "ENTER COURT",
                         fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.Send,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp)
+                        letterSpacing = 2.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Serif
                     )
                 }
             }
-            
+                
             if (showCountryPicker) {
                 CountryPickerBottomSheet(
                     onDismissRequest = { showCountryPicker = false },
@@ -161,6 +221,49 @@ fun AuthScreen(onSendOtp: (String) -> Unit) {
                         countryCode = it.dialCode
                         showCountryPicker = false
                     }
+                )
+            }
+                
+            if (showTermsDialog) {
+                AlertDialog(
+                    onDismissRequest = { showTermsDialog = false },
+                    title = { Text("Royal Decrees (Terms)", color = RoyalGold, fontFamily = FontFamily.Serif) },
+                    text = {
+                        androidx.compose.foundation.lazy.LazyColumn {
+                            item {
+                                Text(
+                                    "Welcome to Gossip!\n\n" +
+                                    "By using our app, you agree to these terms. Please read them carefully.\n\n" +
+                                    "1. User Conduct\n" +
+                                    "You agree not to use the app to post or share any abusive, hateful, or illegal content. We reserve the right to ban accounts that violate these rules.\n\n" +
+                                    "2. Privacy\n" +
+                                    "Your messages are processed for real-time communication. While we strive to protect your data, please be mindful of what you share.\n\n" +
+                                    "3. Age Requirements\n" +
+                                    "You must be at least 13 years old to use this app. By accepting these terms, you confirm that you meet this age requirement.\n\n" +
+                                    "4. Intellectual Property\n" +
+                                    "You retain ownership of the content you share, but grant us a license to host and display it within the service.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color.LightGray
+                                )
+                            }
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(onClick = { 
+                            acceptedTerms = true
+                            showTermsDialog = false 
+                        }) {
+                            Text("Accept", color = RoyalGold)
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showTermsDialog = false }) {
+                            Text("Close", color = Color.Gray)
+                        }
+                    },
+                    containerColor = RoyalNavy,
+                    titleContentColor = RoyalGold,
+                    textContentColor = Color.White
                 )
             }
         }

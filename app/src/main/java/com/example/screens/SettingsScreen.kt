@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -117,6 +118,44 @@ fun SettingsScreen(onNavigateBack: () -> Unit) {
                 subtitle = "Always upload photos and videos in highest quality.",
                 checked = highQualityUploads,
                 onCheckedChange = { highQualityUploads = it; updateSetting("hq_uploads", it) }
+            )
+
+            // --- DATA BACKUP ---
+            SettingsSectionHeader(title = "Data Backup", icon = Icons.Default.Backup)
+            
+            val backupManager = remember { ChatBackupManager(context) }
+            var lastBackupTime by remember { mutableStateOf(backupManager.getLastBackupTime()) }
+            val coroutineScope = rememberCoroutineScope()
+            var isBackingUp by remember { mutableStateOf(false) }
+
+            ListItem(
+                headlineContent = { Text("Export Chat History", fontWeight = FontWeight.SemiBold) },
+                supportingContent = { Text(if (isBackingUp) "Backing up..." else "Last backup: $lastBackupTime") },
+                trailingContent = { 
+                    if (isBackingUp) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                    } else {
+                        Icon(Icons.Default.Download, contentDescription = "Export")
+                    }
+                },
+                modifier = Modifier.clickable(enabled = !isBackingUp) { 
+                    isBackingUp = true
+                    coroutineScope.launch {
+                        val success = backupManager.exportChatHistoryToLocal()
+                        if (success) {
+                            lastBackupTime = backupManager.getLastBackupTime()
+                        }
+                        isBackingUp = false
+                    }
+                }
+            )
+
+            var autoBackup by remember { mutableStateOf(sharedPrefs.getBoolean("auto_backup", false)) }
+            SettingsSwitchItem(
+                title = "Periodic Auto Backup",
+                subtitle = "Automatically sync and save chat history in the background.",
+                checked = autoBackup,
+                onCheckedChange = { autoBackup = it; updateSetting("auto_backup", it) }
             )
 
             // --- APPEARANCE ---

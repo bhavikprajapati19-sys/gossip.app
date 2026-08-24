@@ -69,7 +69,7 @@ fun FriendsListScreen(
                 .padding(paddingValues),
             contentPadding = PaddingValues(vertical = 8.dp)
         ) {
-            items(mockFriends) { friend ->
+            items(mockFriends.filter { !blockedUserIds.contains(it.id) }) { friend ->
                 FriendItem(
                     friend = friend,
                     onClick = { onNavigateToChat(friend.id) }
